@@ -1,0 +1,30 @@
+# Managed by Ansible - do not edit manually.
+[Unit]
+Description=Kiosk display - Grafana dashboard via cage + Chromium
+After=multi-user.target snapd.service
+Wants=multi-user.target
+
+[Service]
+User={{ kiosk_user }}
+Group={{ kiosk_user }}
+RuntimeDirectory=kiosk
+RuntimeDirectoryMode=0700
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/kiosk
+ExecStart=/usr/bin/cage -- \
+    /snap/bin/chromium \
+    --no-sandbox \
+    --kiosk \
+    --noerrdialogs \
+    --disable-translate \
+    --no-first-run \
+    --disable-infobars \
+    --disable-session-crashed-bubble \
+    {{ grafana_kiosk_url }}
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

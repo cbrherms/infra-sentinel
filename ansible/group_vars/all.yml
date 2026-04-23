@@ -1,0 +1,38 @@
+# CONFIGURATION VARIABLES
+github_repo_url: "https://github.com/cbrherms/infra-sentinel.git"
+
+ansible_pull_interval: "15min"
+server_hostname: "sentinel-01"
+
+unattended_upgrades_enabled: true
+
+# NUT
+nut_listen_address: "0.0.0.0"
+nut_listen_port: 3493
+# Source build - bump nut_git_ref to trigger a rebuild on next ansible-pull
+nut_git_ref: "v2.8.5"
+libmodbus_git_ref: "rtu_usb"
+nut_build_prefix: "/usr/local/ups"
+
+# update names/descriptions to match physical units
+ups_devices:
+  # SMT2200 - USB direct, apc_modbus driver
+  - name: "ups1"
+    description: "APC SMT2200 - Servers"
+    driver: "apc_modbus"
+    port: "auto"
+
+  # SMT1000 + AP9620 - serial over USB-to-serial adapter
+  - name: "ups2"
+    description: "APC SMT1000 - Network"
+    driver: "apcsmart"
+    port: "/dev/ttyUSB0"
+
+# SMT750i not yet deployed
+#  - name: "ups3"
+#    description: "APC SMT750i - Voron 2.4"
+#    driver: "apc_modbus"
+#    port: "auto"
+
+# Kiosk
+kiosk_user: "kiosk"

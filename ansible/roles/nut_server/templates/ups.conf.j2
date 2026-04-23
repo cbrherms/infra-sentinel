@@ -1,0 +1,14 @@
+# Managed by Ansible - do not edit manually.
+{% for ups in ups_devices %}
+[{{ ups.name }}]
+    driver = {{ ups.driver }}
+    port   = {{ ups.port | default('auto') }}
+    desc   = "{{ ups.description }}"
+{% if ups.usbid_vendor is defined %}
+    vendorid = {{ ups.usbid_vendor }}
+{% endif %}
+{% if ups.usbid_product is defined %}
+    productid = {{ ups.usbid_product }}
+{% endif %}
+
+{% endfor %}

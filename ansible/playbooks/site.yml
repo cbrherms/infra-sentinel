@@ -1,0 +1,14 @@
+---
+- name: Configure sentinel-01
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars_files:
+    - "{{ playbook_dir }}/../vault/secrets.yml"
+
+  roles:
+    - role: base
+    - role: nut_build
+    - role: nut_server
+    - role: kiosk

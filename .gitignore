@@ -1,0 +1,45 @@
+# vault password - create locally: echo 'password' > .vault-pass && chmod 600 .vault-pass
+.vault-pass
+*.vault-pass
+vault-pass
+.vault_pass
+*.decrypted.yml
+
+# editor temp files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Ansible
+.ansible/
+retry/
+*.retry
+collections/
+roles/external/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.env
+
+# editor/OS
+.DS_Store
+.idea/
+.vscode/
+*.code-workspace
+Thumbs.db
+
+# local notes - not for the repo
+.private/

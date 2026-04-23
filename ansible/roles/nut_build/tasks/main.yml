@@ -1,0 +1,217 @@
+---
+# Check version marker first - all build steps are skipped if already at the desired version.
+# To trigger a rebuild, bump nut_git_ref or libmodbus_git_ref in group_vars/all.yml.
+- name: Read installed NUT build version marker
+  ansible.builtin.slurp:
+    src: "{{ nut_build_prefix }}/.nut-build-version"
+  register: _nut_version_marker  # noqa: var-naming[no-role-prefix]
+  ignore_errors: true
+
+- name: Determine whether rebuild is needed
+  ansible.builtin.set_fact:  # noqa: var-naming[no-role-prefix]
+    _nut_rebuild_needed: >-
+      {{
+        _nut_version_marker.failed | bool or
+        (_nut_version_marker.content | b64decode | trim) != (nut_git_ref ~ ':' ~ libmodbus_git_ref)
+      }}
+
+# Source build replaces apt NUT packages. purge: false preserves /etc/nut configs.
+- name: Ensure apt NUT packages are absent
+  ansible.builtin.apt:
+    name:
+      - nut
+      - nut-client
+      - nut-server
+    state: absent
+    purge: false
+
+- name: Install NUT build dependencies
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - git
+      - autoconf
+      - automake
+      - libtool
+      - pkg-config
+      - libusb-1.0-0-dev
+      - libssl-dev
+      - libltdl-dev
+    state: present
+    update_cache: true
+
+- name: Ensure nut group exists
+  ansible.builtin.group:
+    name: nut
+    system: true
+    state: present
+
+- name: Ensure nut user exists
+  ansible.builtin.user:
+    name: nut
+    group: nut
+    groups: dialout
+    append: true
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/lib/nut
+    create_home: false
+    state: present
+
+- name: Ensure NUT runtime directory exists
+  ansible.builtin.file:
+    path: /run/nut
+    state: directory
+    owner: nut
+    group: nut
+    mode: "0750"
+
+- name: Ensure NUT var directory exists
+  ansible.builtin.file:
+    path: /var/lib/nut
+    state: directory
+    owner: nut
+    group: nut
+    mode: "0750"
+
+# Stop any running NUT services before replacing binaries - drivers hold USB/serial devices open.
+- name: Gather service facts before rebuild
+  ansible.builtin.service_facts:
+  when: _nut_rebuild_needed
+
+- name: Stop NUT monitor and server before rebuild
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - nut-monitor
+    - nut-server
+  when:
+    - _nut_rebuild_needed
+    - ansible_facts.services[item ~ '.service'] is defined
+    - ansible_facts.services[item ~ '.service'].state == 'running'
+
+- name: Stop NUT driver services before rebuild
+  ansible.builtin.systemd:
+    name: "nut-driver@{{ item.name }}"
+    state: stopped
+  loop: "{{ ups_devices }}"
+  when:
+    - _nut_rebuild_needed
+    - ansible_facts.services['nut-driver@' ~ item.name ~ '.service'] is defined
+    - ansible_facts.services['nut-driver@' ~ item.name ~ '.service'].state == 'running'
+
+- name: Ensure build source directory exists
+  ansible.builtin.file:
+    path: /usr/local/src/nut-build
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: _nut_rebuild_needed
+
+- name: Clone networkupstools/libmodbus ({{ libmodbus_git_ref }})
+  ansible.builtin.git:
+    repo: https://github.com/networkupstools/libmodbus.git
+    dest: /usr/local/src/nut-build/libmodbus
+    version: "{{ libmodbus_git_ref }}"
+    update: true
+  when: _nut_rebuild_needed
+
+- name: Clone networkupstools/nut ({{ nut_git_ref }})
+  ansible.builtin.git:
+    repo: https://github.com/networkupstools/nut.git
+    dest: /usr/local/src/nut-build/nut
+    version: "{{ nut_git_ref }}"
+    update: true
+  when: _nut_rebuild_needed
+
+- name: Ensure build prefix directory exists
+  ansible.builtin.file:
+    path: "{{ nut_build_prefix }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: _nut_rebuild_needed
+
+- name: Autogen libmodbus
+  ansible.builtin.command:
+    cmd: ./autogen.sh
+    chdir: /usr/local/src/nut-build/libmodbus
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Configure libmodbus (static, with USB support)
+  ansible.builtin.command:
+    cmd: >-
+      ./configure
+      --with-libusb
+      --enable-static
+      --disable-shared
+      --prefix={{ nut_build_prefix }}
+    chdir: /usr/local/src/nut-build/libmodbus
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Build and install libmodbus
+  ansible.builtin.command:
+    cmd: make install
+    chdir: /usr/local/src/nut-build/libmodbus
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Autogen NUT
+  ansible.builtin.command:
+    cmd: ./autogen.sh
+    chdir: /usr/local/src/nut-build/nut
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Configure NUT
+  ansible.builtin.shell:
+    cmd: |
+      ./configure \
+        --prefix={{ nut_build_prefix }} \
+        --sysconfdir=/etc/nut \
+        --with-statepath=/run/nut \
+        --with-user=nut \
+        --with-group=nut \
+        --with-drivers=apc_modbus,apcsmart,usbhid-ups \
+        --with-usb \
+        --with-modbus \
+        "--with-modbus-includes=-I{{ nut_build_prefix }}/include/modbus" \
+        "--with-modbus-libs=-L{{ nut_build_prefix }}/lib -lmodbus" \
+        --with-doc=skip \
+        --with-systemdsystemunitdir=/lib/systemd/system
+    chdir: /usr/local/src/nut-build/nut
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Build NUT
+  ansible.builtin.command:
+    cmd: make -j{{ ansible_processor_vcpus | default(2) }}
+    chdir: /usr/local/src/nut-build/nut
+  changed_when: true
+  when: _nut_rebuild_needed
+
+- name: Install NUT
+  ansible.builtin.command:
+    cmd: make install
+    chdir: /usr/local/src/nut-build/nut
+  changed_when: true
+  notify: Reload systemd daemon
+  when: _nut_rebuild_needed
+
+- name: Write NUT build version marker
+  ansible.builtin.copy:
+    content: "{{ nut_git_ref }}:{{ libmodbus_git_ref }}"
+    dest: "{{ nut_build_prefix }}/.nut-build-version"
+    owner: root
+    group: root
+    mode: "0644"
+  when: _nut_rebuild_needed
+
+# Ensure systemd is reloaded before nut_server attempts to start services.
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

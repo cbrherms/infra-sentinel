@@ -1,0 +1,14 @@
+# Managed by Ansible - do not edit manually.
+
+{% for ups in ups_devices %}
+MONITOR {{ ups.name }}@127.0.0.1:{{ nut_listen_port }} 1 monitor {{ nut_monitor_password }} primary
+{% endfor %}
+
+# MINSUPPLIES 0: sentinel-01 is a monitoring box, not a protected server.
+# Increase if you want the host to self-shutdown on power loss.
+MINSUPPLIES 0
+
+SHUTDOWNCMD "/sbin/shutdown -h now"
+FINALDELAY 5
+POLLFREQ 5
+POLLFREQALERT 5

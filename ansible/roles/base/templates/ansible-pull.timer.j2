@@ -1,0 +1,14 @@
+# Managed by Ansible - do not edit manually.
+
+[Unit]
+Description=ansible-pull timer - run every {{ ansible_pull_interval }}
+Requires=network-online.target
+After=network-online.target
+
+[Timer]
+OnUnitActiveSec={{ ansible_pull_interval }}
+OnBootSec=2min
+Unit=ansible-pull.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,28 @@
+---
+name: Lint
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: ansible-lint + yamllint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+
+      - name: Write vault password
+        run: echo "${{ secrets.VAULT_PASSWORD }}" > .vault-pass
+
+      - name: Run lint tasks
+        run: just lint

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+if git diff --cached --name-only | grep -q 'ansible/vault/secrets.yml'; then
+  first_line=$(git show ':ansible/vault/secrets.yml' 2>/dev/null | head -1)
+  if [[ "$first_line" != '$ANSIBLE_VAULT'* ]]; then
+    echo "ERROR: ansible/vault/secrets.yml is not vault-encrypted."
+    echo "Run 'just vault-encrypt' before committing."
+    exit 1
+  fi
+fi

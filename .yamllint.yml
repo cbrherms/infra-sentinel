@@ -1,0 +1,23 @@
+extends: relaxed
+
+ignore: |
+  .venv/
+  .ansible/
+
+rules:
+  line-length:
+    max: 160
+  truthy:
+    allowed-values:
+      - "true"
+      - "false"
+      - "yes"
+      - "no"
+  colons:
+    max-spaces-after: 1
+  new-line-at-end-of-file: enable
+  comments:
+    min-spaces-from-content: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
