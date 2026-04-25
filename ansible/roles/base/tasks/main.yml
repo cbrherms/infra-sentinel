@@ -87,6 +87,14 @@
     state: started
   when: unattended_upgrades_enabled | bool
 
+- name: Add NUT build prefix to system PATH
+  ansible.builtin.copy:
+    content: "PATH={{ nut_build_prefix }}/bin:{{ nut_build_prefix }}/sbin:$PATH\n"
+    dest: /etc/profile.d/nut-path.sh
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Create /etc/ansible directory
   ansible.builtin.file:
     path: /etc/ansible
