@@ -20,6 +20,7 @@
     groups:
       - video
       - render
+      - input
     append: true
     state: present
 

@@ -7,10 +7,13 @@ Wants=multi-user.target
 [Service]
 User={{ kiosk_user }}
 Group={{ kiosk_user }}
+PAMName=login
+TTYPath=/dev/tty7
+StandardInput=tty-fail
 RuntimeDirectory=kiosk
 RuntimeDirectoryMode=0700
-Environment=WAYLAND_DISPLAY=wayland-0
 Environment=XDG_RUNTIME_DIR=/run/kiosk
+Environment=XDG_SESSION_TYPE=drm
 ExecStart=/usr/bin/cage -- \
     /snap/bin/chromium \
     --no-sandbox \
