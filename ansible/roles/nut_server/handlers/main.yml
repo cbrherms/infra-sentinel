@@ -14,6 +14,11 @@
     name: "nut-driver@{{ item.name }}"
     state: restarted
   loop: "{{ ups_devices }}"
+  retries: 5
+  delay: 5
+  register: _nut_driver_restart  # noqa: var-naming[no-role-prefix]
+  until: _nut_driver_restart is not failed
+  ignore_errors: true
 
 - name: Reload udev rules
   ansible.builtin.shell:

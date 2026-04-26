@@ -81,3 +81,4 @@
   delay: 5
   register: _nut_driver_start  # noqa: var-naming[no-role-prefix]
   until: _nut_driver_start is not failed
+  ignore_errors: true
