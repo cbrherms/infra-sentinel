@@ -1,4 +1,12 @@
 ---
+- name: Ensure ansible log directory exists
+  ansible.builtin.file:
+    path: /var/log/ansible
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Update apt cache and upgrade all packages
   ansible.builtin.apt:
     update_cache: true

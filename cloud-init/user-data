@@ -91,11 +91,13 @@ autoinstall:
 
   late-commands:
     - curtin in-target -- mkdir -p /etc/ansible
+    - curtin in-target -- mkdir -p /var/log/ansible
     # TODO: replace VAULT_PASSWORD_HERE before writing to USB - never commit the substituted file
     - curtin in-target -- bash -c "echo 'VAULT_PASSWORD_HERE' > /etc/ansible/vault-pass"
     - curtin in-target -- chmod 0600 /etc/ansible/vault-pass
     - curtin in-target -- chown root:root /etc/ansible/vault-pass
     - curtin in-target -- ansible-pull
+        -vvv
         -U https://github.com/cbrherms/infra-sentinel.git
         -i ansible/inventory/hosts.yml
         -C main
