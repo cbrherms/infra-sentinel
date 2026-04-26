@@ -23,10 +23,10 @@ ups_devices:
     port: "auto"
 
   # SMT1000 + AP9620 - serial over USB-to-serial adapter
-  - name: "ups2"
-    description: "APC SMT1000 - Network"
-    driver: "apcsmart"
-    port: "/dev/ttyUSB0"
+#  - name: "ups2"
+#    description: "APC SMT1000 - Network"
+#    driver: "apcsmart"
+#    port: "/dev/ttyUSB0"
 
 # SMT750i not yet deployed
 #  - name: "ups3"
