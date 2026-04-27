@@ -1,7 +1,7 @@
 # Managed by Ansible - do not edit manually.
 [Unit]
 Description=Kiosk display - Grafana dashboard via cage + Chromium
-After=multi-user.target snapd.service
+After=multi-user.target snapd.seeded.service
 Wants=multi-user.target
 
 [Service]
@@ -9,11 +9,13 @@ User={{ kiosk_user }}
 Group={{ kiosk_user }}
 PAMName=login
 TTYPath=/dev/tty7
-StandardInput=tty-fail
-RuntimeDirectory=kiosk
-RuntimeDirectoryMode=0700
-Environment=XDG_RUNTIME_DIR=/run/kiosk
-Environment=XDG_SESSION_TYPE=drm
+Environment=XDG_RUNTIME_DIR=/run/user/{{ kiosk_uid }}
+Environment=XDG_SESSION_TYPE=wayland
+Environment=LIBSEAT_BACKEND=logind
+ExecStartPre=+/usr/bin/chvt 7
+ExecStartPre=+/bin/mkdir -p /run/user/{{ kiosk_uid }}
+ExecStartPre=+/bin/chown {{ kiosk_user }}:{{ kiosk_user }} /run/user/{{ kiosk_uid }}
+ExecStartPre=+/bin/chmod 700 /run/user/{{ kiosk_uid }}
 ExecStart=/usr/bin/cage -- \
     /snap/bin/chromium \
     --no-sandbox \

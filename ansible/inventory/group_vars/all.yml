@@ -36,3 +36,4 @@ ups_devices:
 
 # Kiosk
 kiosk_user: "kiosk"
+kiosk_uid: 996
