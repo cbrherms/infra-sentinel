@@ -96,12 +96,9 @@ autoinstall:
     - curtin in-target -- bash -c "echo 'VAULT_PASSWORD_HERE' > /etc/ansible/vault-pass"
     - curtin in-target -- chmod 0600 /etc/ansible/vault-pass
     - curtin in-target -- chown root:root /etc/ansible/vault-pass
-    - curtin in-target -- ansible-pull
-        -vvv
-        -U https://github.com/cbrherms/infra-sentinel.git
-        -i ansible/inventory/hosts.yml
-        -C main
-        --vault-password-file /etc/ansible/vault-pass
-        ansible/playbooks/site.yml
+    - curtin in-target -- bash -c "printf '#!/bin/sh\nmkdir -p /var/log/ansible\nansible-pull -vvv -U https://github.com/cbrherms/infra-sentinel.git -i ansible/inventory/hosts.yml -C main --vault-password-file /etc/ansible/vault-pass ansible/playbooks/site.yml > /var/log/ansible/ansible-firstrun.log 2>&1\ntouch /var/lib/ansible-bootstrap.done\nreboot\n' > /usr/local/bin/ansible-bootstrap.sh"
+    - curtin in-target -- chmod +x /usr/local/bin/ansible-bootstrap.sh
+    - curtin in-target -- bash -c "printf '[Unit]\nDescription=Ansible first-boot bootstrap\nAfter=network-online.target\nWants=network-online.target\nConditionPathExists=!/var/lib/ansible-bootstrap.done\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/ansible-bootstrap.sh\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/ansible-bootstrap.service"
+    - curtin in-target -- systemctl enable ansible-bootstrap.service
 
   confirm-deprecated-use-of-unencrypted-autoinstall-mode: true
