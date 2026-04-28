@@ -21,12 +21,18 @@ ups_devices:
     description: "APC SMT2200 - Servers"
     driver: "apc_modbus"
     port: "auto"
+    usbid_vendor: "051D"
+    usbid_product: "0003"
+    usbid_serial: "AS2034242877"
 
-  # SMT1000 + AP9620 - serial over USB-to-serial adapter
+  # SMT1000 - USB via AP9620 card
   - name: "ups2"
     description: "APC SMT1000 - Network"
-    driver: "apcsmart"
-    port: "/dev/ttyUSB0"
+    driver: "usbhid-ups"
+    port: "auto"
+    usbid_vendor: "051D"
+    usbid_product: "0003"
+    usbid_serial: "AS1125110676"
 
 # SMT750i not yet deployed
 #  - name: "ups3"

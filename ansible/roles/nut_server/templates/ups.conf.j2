@@ -10,5 +10,8 @@
 {% if ups.usbid_product is defined %}
     productid = {{ ups.usbid_product }}
 {% endif %}
+{% if ups.usbid_serial is defined %}
+    serial = {{ ups.usbid_serial }}
+{% endif %}
 
 {% endfor %}
